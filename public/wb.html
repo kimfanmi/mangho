@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>wb</title>
+</head>
+  <div id="game_name"></div>
+<body>
+  <div id="socket_chat_message"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = io();
+    socket.on("chat message", function (msg) {
+      ahk_event('Message', event);
+    });
+    socket.on("connect", function(){
+      document.getElementById('asdasd').innerText = ws.id;
+    });
+  </script>
+</body>
+
+</html>
