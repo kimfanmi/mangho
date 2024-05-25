@@ -10,21 +10,10 @@ const db = new MySQL();
 
 const port = 5000;
 
-// app.use(cors({
-//   origin: '*', // 모든 출처 허용 옵션. true 를 써도 된다.
-// }));
+// 라우팅을 정의한 파일을 가져옴
+const routes = require('./routes');
 
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
-
-app.get("/wb", (req, res) => {
-  res.sendFile(__dirname + "/public/wb.html");
-});
-
-app.get("/wb2", (req, res) => {
-  res.sendFile(__dirname + "/public/wb2.html");
-});
+app.use('/', routes); // 라우팅을 사용
 
 const server = app.listen(port, () => {
   console.log("listen on : " + port)
