@@ -14,6 +14,10 @@ module.exports = (server, rooms, db) => {
   // 클라이언트가 소켓에 연결되었을 때 실행되는 이벤트 핸들러
   io.on("connection", (socket) => {
 
+    socket.on("chat_message", (msg) => {
+      io.to(socket.roomId).emit("chat_message", socket.user.nickName, msg);
+    });
+
     // 클라이언트로부터 userId 이벤트를 받았을 때 사용자 정보를 가져와서 소켓에 저장
     socket.on("userId", async (userId) => {
       try {
@@ -34,7 +38,7 @@ module.exports = (server, rooms, db) => {
       rooms.joinUser(socket.user, roomId);
       socket.roomId = roomId;
       socket.join(socket.roomId);
-      io.to(socket.roomId).emit("chat message", "notice", socket.user.nickName + "님이 망호에 참여하셨습니다.");
+      io.to(socket.roomId).emit("chat_message", "notice", socket.user.nickName + "님이 망호에 참여하셨습니다.");
     });
 
     // 클라이언트가 방을 떠날 때 실행되는 이벤트 핸들러
@@ -42,7 +46,7 @@ module.exports = (server, rooms, db) => {
       if (socket.roomId) {
         rooms.leaveUser(socket.user, roomId);
         socket.leave(socket.roomId);
-        io.to(socket.roomId).emit("chat message", "notice", socket.user.nickName + "님이 망호에서 퇴장하셨습니다.");
+        io.to(socket.roomId).emit("chat_message", "notice", socket.user.nickName + "님이 망호에서 퇴장하셨습니다.");
         socket.roomId = null;
       }
     });
@@ -72,25 +76,27 @@ module.exports = (server, rooms, db) => {
         // 해당 방에서 클라이언트를 나가게 함
         rooms.leaveUser(socket.user, socket.roomId);
         socket.leave(socket.roomId);
-        io.to(socket.roomId).emit("chat message", "notice", socket.user.nickName + "님이 망호에서 퇴장하셨습니다.");
+        io.to(socket.roomId).emit("chat_message", "notice", socket.user.nickName + "님이 망호에서 퇴장하셨습니다.");
         socket.roomId = null;
       }
     });
 
     // 클라이언트가 방을 만들 때 실행되는 이벤트 핸들러
-    socket.on("makeRoom", (roomName, maxUser) => {
-      let roomId = rooms.makeRoom(roomName, maxUser);
+    socket.on("makeRoom", (json) => {
+      let roomId = rooms.makeRoom(json.gall, json.roomName, json.maxUser);
       socket.emit("rs_MakeRoom", roomId);
     });
 
     // 클라이언트가 requestRooms 이벤트를 요청할 때마다 방 목록을 전송
-    socket.on("requestRooms", () => {
+    socket.on("requestRooms", (gall) => {
       // 초기 방 목록 전송
-      sendRoomsList(socket);
+      sendRoomsList(socket, gall);
 
       // 방 목록이 변경될 때마다 실시간으로 업데이트
-      const changeListener = () => {
-        sendRoomsList(socket);
+      const changeListener = (rgall) => {
+        if (gall==rgall) {
+          sendRoomsList(socket, gall);
+        }
       };
       rooms.on("change", changeListener);
 
@@ -103,6 +109,6 @@ module.exports = (server, rooms, db) => {
 
   // 방 목록을 클라이언트에게 전송하는 함수
   function sendRoomsList(socket) {
-    socket.emit("rs_getRooms", rooms.getRooms());
+    socket.emit("rs_getRooms", rooms.getRooms(gall));
   }
 };

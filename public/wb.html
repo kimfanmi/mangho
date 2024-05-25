@@ -3,20 +3,96 @@
 
 <head>
   <title>wb</title>
-</head>
-  <div id="game_name"></div>
-<body>
-  <div id="socket_chat_message"></div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let socket = io();
-    socket.on("chat message", function (msg) {
-      ahk_event('Message', event);
-    });
-    socket.on("connect", function(){
-      document.getElementById('asdasd').innerText = ws.id;
+    document.addEventListener("DOMContentLoaded", () => {
+      let socket = io();
+
+      // JSON 형식 여부를 확인하는 함수
+      const isJsonString = (str) => {
+        try {
+          JSON.parse(str);
+        } catch (e) {
+          return false;
+        }
+        return true;
+      };
+
+      // 값을 소켓으로 전송하는 함수
+      const sendValue = (p) => {
+        const value = p.innerText;
+        if (isJsonString(value)) {
+          // JSON 형식의 문자열이면 파싱해서 객체로 전송
+          socket.emit(p.id, JSON.parse(value));
+        } else {
+          // JSON 형식이 아니면 그대로 문자열로 전송
+          socket.emit(p.id, value);
+        }
+      };
+
+      // 모든 div 요소에 클릭 이벤트 추가
+      document.querySelectorAll('#toServer > div').forEach(p => {
+        p.onclick = () => {
+          const value = p.innerText;
+          // innerText가 "0"일 때와 아닐 때 구분하여 전송
+          if (value == "0") {
+            socket.emit(p.id);
+          } else {
+            sendValue(p);
+          }
+        }
+      });
+
+      document.querySelectorAll('#fromServer > ul').forEach(p => {
+        socket.on(p.id, function () {
+          const args = Array.from(arguments); // arguments 객체를 배열로 변환
+          if (args.length == 0) {
+            let li = document.createElement('li');
+            li.className = 0;
+            li.innerText = 'go';
+            p.appendChild(li);
+          } else {
+            args.forEach((arg, i) => {
+              let li = document.createElement('li');
+              li.className = i;
+              li.innerText = arg;
+              p.appendChild(li);
+            });
+          }
+        });
+        p.onclick = () => {
+          p.innerHTML = '';
+        }
+      });
+
+      // 소켓이 연결될 때 실행될 함수
+      socket.on('connect', () => {
+        // 연결이 성공했을 때 connect div의 innerText를 1로 변경
+        document.getElementById('connect').innerText = '1';
+      });
     });
   </script>
+</head>
+
+<body>
+  <div id="connect">0</div>
+  <div id="toServer">
+    <div id="userId">0</div>
+    <div id="joinRoom">0</div>
+    <div id="leaveRoom">0</div>
+    <div id="closeRoom">0</div>
+    <div id="makeRoom">0</div>
+    <div id="requestRooms">0</div>
+    <div id="stopRequest">0</div>
+    <div id="chat_message">0</div>
+  </div>
+  <div id="fromServer">
+    <ul id="userIdRequest"></ul>
+    <ul id="chat_message"></ul>
+    <ul id="roomClosed"></ul>
+    <ul id="rs_MakeRoom"></ul>
+    <ul id="rs_getRooms"></ul>
+  </div>
 </body>
 
 </html>

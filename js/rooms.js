@@ -6,20 +6,20 @@ class Rooms extends EventEmitter {
     this.rooms = [];
   }
 
-
-  makeRoom(roomName, maxUser = 4) {
+  makeRoom(gall, roomName, maxUser = 4) {
     let roomId = this.randomId();
-    let room = { roomName, maxUser, roomId, users: [], state:"모집중" };
+    let room = { gall, roomName, maxUser, roomId, users: [], state: "모집중", mLink:"" };
     this.rooms.push(room);
-    this.emit('change'); // 방 목록이 변경될 때 이벤트 발생
+    this.emitChangeByGall(gall); // 방 목록이 변경될 때 해당 gall에 대한 이벤트 발생
     return roomId;
   }
 
   destroyRoom(roomId) {
+    let gall = this.findRoomById(roomId).gall;
     let roomIndex = this.rooms.findIndex(room => room.roomId === roomId);
     if (roomIndex !== -1) {
       this.rooms.splice(roomIndex, 1);
-      this.emit('change'); // 방 목록이 변경될 때 이벤트 발생
+      this.emitChangeByGall(gall); // 방 목록이 변경될 때 이벤트 발생
       console.log(`Room with ID ${roomId} has been destroyed.`);
     } else {
       console.log(`Room with ID ${roomId} does not exist.`);
@@ -36,7 +36,7 @@ class Rooms extends EventEmitter {
     if (room.users.length < room.maxUser) {
       room.users.push(user);
       console.log(`${user.name} has joined ${room.roomName}.`);
-      this.emit('change'); // 방 목록이 변경될 때 이벤트 발생
+      this.emitChangeByGall(room.gall); // 방 목록이 변경될 때 이벤트 발생
       return 1;
     } else {
       console.log(`Room ${room.roomName} is full. ${user.name} cannot join.`);
@@ -52,7 +52,7 @@ class Rooms extends EventEmitter {
     }
 
     room.users = room.users.filter(u => u !== user);
-    this.emit('change'); // 방 목록이 변경될 때 이벤트 발생
+    this.emitChangeByGall(room.gall); // 방 목록이 변경될 때 이벤트 발생
   }
 
   getUserCount(roomId) {
@@ -72,17 +72,27 @@ class Rooms extends EventEmitter {
       return;
     }
     room.state = state;
-    this.emit('change'); // 방 목록이 변경될 때 이벤트 발생
+    this.emitChangeByGall(room.gall); // 방 목록이 변경될 때 이벤트 발생
   }
 
-  getRooms() {
-    return this.rooms;
+  change_mLink(roomId, mLink) {
+    let room = this.findRoomById(roomId);
+    if (!room) {
+      console.log(`Room with ID ${roomId} does not exist.`);
+      return;
+    }
+    room.mLink = mLink;
+    this.emitChangeByGall(room.gall); // 방 목록이 변경될 때 이벤트 발생
   }
 
+  getRooms(gall) {
+    return this.rooms.filter(p=>p.gall == gall);
+  }
 
+  getRoom(roomId) {
+    return this.findRoomById(roomId);
+  }
 
-
-  
   randomId() {
     const generateId = () => {
       return Math.random().toString(36).substring(2, 9); // Generates a random string of length 9
@@ -98,6 +108,10 @@ class Rooms extends EventEmitter {
 
   findRoomById(roomId) {
     return this.rooms.find(room => room.roomId === roomId);
+  }
+
+  emitChangeByGall(gall) {
+    this.emit('change', gall); // 해당 gall에 대한 이벤트 발생
   }
 }
 
