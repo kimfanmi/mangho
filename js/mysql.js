@@ -56,6 +56,24 @@ class MySQL {
     }
   }
 
+  async createUser(userId) {
+    await this.connect(); // 사용자 조회 전에 연결을 확인하고 필요한 경우 연결 수립
+    const sql = 'SELECT * FROM users WHERE userId = ?';
+    const results = await this.query(sql, [userId]);
+    if (results.length > 0) {
+      // 사용자가 존재하는 경우
+      const user = {
+        userId: results[0].userId,
+        userName: results[0].userName,
+        // 기타 사용자 속성 추가
+      };
+      return user;
+    } else {
+      // 사용자가 존재하지 않는 경우
+      return null;
+    }
+  }
+
   async disconnect() {
     if (this.isConnected) {
       clearTimeout(this.disconnectTimer); // 타임아웃 타이머 해제

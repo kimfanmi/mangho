@@ -11,9 +11,12 @@ const db = new MySQL();
 const port = 5000;
 
 // 라우팅을 정의한 파일을 가져옴
-const routes = require('./routes');
+const page = require('./js/page')();
+const api = require('./js/api')(db);
 
-app.use('/', routes); // 라우팅을 사용
+// 라우팅을 사용
+app.use('/', page); 
+app.use('/', api); 
 
 const server = app.listen(port, () => {
   console.log("listen on : " + port)
